@@ -402,6 +402,8 @@ const ControlScreen = ({ route, bleManager }: Props) => {
     } else {
       if (batteryLeft === 100) {
         return base;
+      } else if (batteryLeft === 0) {
+        return `${base}-outline`;
       } else {
         const level = Math.floor(batteryLeft / 20) * 20;
         return `${base}-${level}`;

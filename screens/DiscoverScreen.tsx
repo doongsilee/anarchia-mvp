@@ -1,15 +1,14 @@
 import { StackNavigationProp } from "@react-navigation/stack";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
   View,
   Image,
-  NativeModules,
-  NativeEventEmitter,
   Platform,
   Linking,
   TouchableOpacity,
+  PermissionsAndroid,
 } from "react-native";
 import { Button, Text } from "react-native-elements";
 import { ConnectionStackParamList } from "../types";
@@ -22,6 +21,9 @@ import AndroidOpenSettings from "react-native-android-open-settings";
 import { withBLEContext } from "../contexts";
 
 // 임시 디바이스 네임
+// const DEV_DEVICE_NAME_1 = "[TV] Serif";
+// const DEV_DEVICE_NAME_2 = "UHD3";
+
 const DEV_DEVICE_NAME_1 = "ANARCHIA_1";
 const DEV_DEVICE_NAME_2 = "ANARCHIA_2";
 
@@ -42,8 +44,11 @@ const DiscoverScreen = ({ navigation, bleManager }: Props) => {
   const [step, setStep] = useState(0);
   // const [bleManager, setBleManger] = useState<BleManager>();
 
-  const [devDeviceLeft, setDevDeviceLeft] = useState<Device>();
-  const [devDeviceRight, setDevDeviceRight] = useState<Device>();
+  const [deviceName, setDeviceNames] = useState<String[]>([]);
+  const [deviceIds, setDeviceIds] = useState<String[]>([]);
+
+  const [devDeviceLeft, setDevDeviceLeft] = useState<String>();
+  const [devDeviceRight, setDevDeviceRight] = useState<String>();
   // const [scannedDevies, setScannedDevies] = useState<Set<Device>>(new Set());
 
   // const [devices, setDevices] = useState<Device[]>([]);
@@ -53,18 +58,18 @@ const DiscoverScreen = ({ navigation, bleManager }: Props) => {
     if (step === 1) {
       timerId = setTimeout(() => {
         getBluetoothState();
-      }, 2000);
+      }, 1000);
     } else if (step === 3) {
       scanDevices();
       timerId = setTimeout(() => {
         bleManager?.stopDeviceScan();
         // handleStopScan();
-        if (!devDeviceLeft) {
+        if (devDeviceLeft === undefined || devDeviceRight === undefined) {
           setStep(4);
         } else {
           setStep(5);
         }
-      }, 10000);
+      }, 30000);
     } else if (step === 6) {
       handleConnect();
     }
@@ -78,14 +83,38 @@ const DiscoverScreen = ({ navigation, bleManager }: Props) => {
     const state = await bleManager?.state();
     console.log(state);
     if (state === State.PoweredOn) {
+      requestBluetoothPermission();
       //@ts-ignore
-      try {
-        setStep(3);
-      } catch (error) {
-        console.error(error);
-      }
+      // try {
+      //   setStep(3);
+      // } catch (error) {
+      //   console.error(error);
+      // }
     } else {
       setStep(2);
+    }
+  };
+
+  const requestBluetoothPermission = async () => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+        {
+          title: "아나키아 블루투스 퍼미션",
+          message: "아나키아 앱서비스를 이용하기 위해 권한이 필요합니다.",
+          buttonNeutral: "Ask Me Later",
+          buttonNegative: "Cancel",
+          buttonPositive: "OK",
+        }
+      );
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        console.log("You can use the bluetooth");
+        setStep(3);
+      } else {
+        console.log("permission denied");
+      }
+    } catch (err) {
+      console.warn(err);
     }
   };
 
@@ -123,37 +152,63 @@ const DiscoverScreen = ({ navigation, bleManager }: Props) => {
     // bleManagerEmitter.addListener("BleManagerStopScan", handleStopScan);
 
     //@ts-ignore
-    bleManager.startDeviceScan(null, null, async (error, device) => {
-      if (error) {
-        // Handle error (scanning will be stopped automatically)
-        console.error(error);
-        return;
+    bleManager.startDeviceScan(
+      null,
+      { allowDuplicates: false },
+      async (error, device) => {
+        if (error) {
+          // Handle error (scanning will be stopped automatically)
+          console.error(error);
+          return;
+        }
+
+        if (!device) {
+          //handle error
+          console.error("No Device found");
+          return;
+        }
+        console.log("scanning bluetooth deivces...");
+        console.log(
+          `id: ${device.id} , name: ${device.name}, localName: ${device.localName}, manufacturerData: ${device.manufacturerData}`
+        );
+
+        if (device.name != null) {
+          // @ts-ignore
+          setDeviceNames((prev) => [...prev, device.name]);
+        }
       }
 
-      if (!device) {
-        //handle error
-        console.error("No Device found");
-        return;
-      }
-      console.log("scanning bluetooth deivces...");
-      console.log(
-        `id: ${device.id} , name: ${device.name}, localName: ${device.localName}, manufacturerData: ${device.manufacturerData}`
-      );
+      // if (device.name === DEV_DEVICE_NAME_1) {
+      //   setDevDeviceLeft(device);
+      // }
 
-      if (device.name === DEV_DEVICE_NAME_1) {
-        setDevDeviceLeft(device);
-      }
+      // if (device.name === DEV_DEVICE_NAME_2) {
+      //   setDevDeviceRight(device);
+      // }
 
-      if (device.name === DEV_DEVICE_NAME_2) {
-        setDevDeviceRight(device);
-      }
+      // if (devDeviceLeft !== undefined && devDeviceRight !== undefined) {
+      //   setStep(5);
+      //   bleManager.stopDeviceScan();
+      // }
+    );
+  };
 
-      if (devDeviceLeft && devDeviceRight) {
+  useEffect(() => {
+    console.log("device 값이 변경되었습니다.");
+    if (deviceName.length > 0) {
+      const left = deviceName.find((name) => name === DEV_DEVICE_NAME_1);
+      const right = deviceName.find((name) => name === DEV_DEVICE_NAME_2);
+
+      if (left && right) {
+        setDevDeviceLeft(left);
+        setDevDeviceRight(right);
+
+        console.log("다찾음!");
         bleManager.stopDeviceScan();
         setStep(5);
       }
-    });
-  };
+    }
+  }, [deviceName]);
 
   if (step === 0) {
     return (
@@ -216,6 +271,9 @@ const DiscoverScreen = ({ navigation, bleManager }: Props) => {
         <Text style={styles.welcomeText}>
           사용 가능한 제품을 찾고 있습니다...
         </Text>
+        {[...new Set(deviceName)].map((name, index) => (
+          <Text key={index}>{`${name}`}</Text>
+        ))}
         <ActivityIndicator
           color="black"
           size="large"
