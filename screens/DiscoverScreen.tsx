@@ -44,11 +44,13 @@ const DiscoverScreen = ({ navigation, bleManager }: Props) => {
   const [step, setStep] = useState(0);
   // const [bleManager, setBleManger] = useState<BleManager>();
 
-  const [deviceName, setDeviceNames] = useState<String[]>([]);
-  const [deviceIds, setDeviceIds] = useState<String[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
 
-  const [devDeviceLeft, setDevDeviceLeft] = useState<String>();
-  const [devDeviceRight, setDevDeviceRight] = useState<String>();
+  // const [deviceName, setDeviceNames] = useState<String[]>([]);
+  // const [deviceIds, setDeviceIds] = useState<String[]>([]);
+
+  const [devDeviceLeft, setDevDeviceLeft] = useState<Device>();
+  const [devDeviceRight, setDevDeviceRight] = useState<Device>();
   // const [scannedDevies, setScannedDevies] = useState<Set<Device>>(new Set());
 
   // const [devices, setDevices] = useState<Device[]>([]);
@@ -172,10 +174,7 @@ const DiscoverScreen = ({ navigation, bleManager }: Props) => {
           `id: ${device.id} , name: ${device.name}, localName: ${device.localName}, manufacturerData: ${device.manufacturerData}`
         );
 
-        if (device.name != null) {
-          // @ts-ignore
-          setDeviceNames((prev) => [...prev, device.name]);
-        }
+        setDevices((prev) => [...prev, device]);
       }
 
       // if (device.name === DEV_DEVICE_NAME_1) {
@@ -195,9 +194,9 @@ const DiscoverScreen = ({ navigation, bleManager }: Props) => {
 
   useEffect(() => {
     console.log("device 값이 변경되었습니다.");
-    if (deviceName.length > 0) {
-      const left = deviceName.find((name) => name === DEV_DEVICE_NAME_1);
-      const right = deviceName.find((name) => name === DEV_DEVICE_NAME_2);
+    if (devices.length > 0) {
+      const left = devices.find((device) => device.name === DEV_DEVICE_NAME_1);
+      const right = devices.find((device) => device.name === DEV_DEVICE_NAME_2);
 
       if (left && right) {
         setDevDeviceLeft(left);
@@ -208,7 +207,7 @@ const DiscoverScreen = ({ navigation, bleManager }: Props) => {
         setStep(5);
       }
     }
-  }, [deviceName]);
+  }, [devices]);
 
   if (step === 0) {
     return (
@@ -271,7 +270,7 @@ const DiscoverScreen = ({ navigation, bleManager }: Props) => {
         <Text style={styles.welcomeText}>
           사용 가능한 제품을 찾고 있습니다...
         </Text>
-        {[...new Set(deviceName)].map((name, index) => (
+        {[...new Set(devices.map(device => device.id))].map((name, index) => (
           <Text key={index}>{`${name}`}</Text>
         ))}
         <ActivityIndicator
@@ -334,9 +333,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   welcomeText: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "400",
     marginBottom: 14,
+    textAlign: 'center',
   },
   blackButton: {
     marginTop: 28,

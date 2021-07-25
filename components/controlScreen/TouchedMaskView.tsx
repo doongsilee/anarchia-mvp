@@ -41,7 +41,7 @@ const TouchedMaskView = ({
           flex: 1,
           width: "100%",
           backgroundColor:
-            !device || powerState === 0
+            !device || powerState === 0 || powerState === 2
               ? "#eaeaea"
               : targetTemp > 7
               ? "#FC4308"
@@ -52,7 +52,7 @@ const TouchedMaskView = ({
         style={{
           flex: 1,
           backgroundColor:
-            !device || powerState === 0
+            !device || powerState === 0 || powerState === 2
               ? "#eaeaea"
               : targetTemp > 6
               ? "#FC6C08"
@@ -63,7 +63,7 @@ const TouchedMaskView = ({
         style={{
           flex: 1,
           backgroundColor:
-            !device || powerState === 0
+            !device || powerState === 0 || powerState === 2
               ? "#eaeaea"
               : targetTemp > 5
               ? "#FD9309"
@@ -74,7 +74,7 @@ const TouchedMaskView = ({
         style={{
           flex: 1,
           backgroundColor:
-            !device || powerState === 0
+            !device || powerState === 0 || powerState === 2
               ? "#eaeaea"
               : targetTemp > 4
               ? "#FDA909"
@@ -85,7 +85,7 @@ const TouchedMaskView = ({
         style={{
           flex: 1,
           backgroundColor:
-            !device || powerState === 0
+            !device || powerState === 0 || powerState === 2
               ? "#eaeaea"
               : targetTemp > 3
               ? "#FEBF09"
@@ -96,7 +96,7 @@ const TouchedMaskView = ({
         style={{
           flex: 1,
           backgroundColor:
-            !device || powerState === 0
+            !device || powerState === 0 || powerState === 2
               ? "#eaeaea"
               : targetTemp > 2
               ? "#FED70A"
@@ -107,7 +107,7 @@ const TouchedMaskView = ({
         style={{
           flex: 1,
           backgroundColor:
-            !device || powerState === 0
+            !device || powerState === 0 || powerState === 2
               ? "#eaeaea"
               : targetTemp > 1
               ? "#FFF30A"
@@ -118,7 +118,7 @@ const TouchedMaskView = ({
         style={{
           flex: 1,
           backgroundColor:
-            !device || powerState === 0
+            !device || powerState === 0 || powerState === 2
               ? "#eaeaea"
               : targetTemp > 0
               ? "#FFFF66"
@@ -129,7 +129,7 @@ const TouchedMaskView = ({
         style={{
           flex: 1,
           backgroundColor:
-            !device || powerState === 0
+            !device || powerState === 0 || powerState === 2
               ? "#eaeaea"
               : targetTemp > -1
               ? "#FFFFC0"

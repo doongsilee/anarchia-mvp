@@ -63,6 +63,9 @@ const ControlScreen = ({ route, bleManager }: Props) => {
   const [leftCurTemp, setLeftCurTemp] = useState(0);
   const [rightCurTemp, setRightCurTemp] = useState(0);
 
+  let leftTest = 0;
+  let rightTest = 0;
+
   useEffect(() => {
     connectToDevices();
     return () => disconnectAll();
@@ -198,9 +201,14 @@ const ControlScreen = ({ route, bleManager }: Props) => {
     }
   }, [rightNotiCharacteristic]);
 
+  useEffect(() => {
+    console.log(rightPower);
+  }, [rightPower]);
+
   const handleLeftPressPower = () => {
     //전원 꺼져있음
-    if (leftPower === 1) {
+
+    if (leftPower === 1 || leftPower === 3) {
       const data = Buffer.from("0000", "hex").toString("base64");
       leftRwCharacteristic?.writeWithoutResponse(data);
     } else {
@@ -212,14 +220,18 @@ const ControlScreen = ({ route, bleManager }: Props) => {
         "base64"
       );
       leftRwCharacteristic?.writeWithoutResponse(level);
+
+      setLeftTemp(0);
     }
 
-    setLeftPower(leftPower === 0 ? 1 : 0);
+    // setLeftPower(
+    //   leftPower === 0 || leftPower === 2 ? leftPower + 1 : leftPower - 1
+    // );
   };
 
   const handleRightPressPower = () => {
     //전원 꺼져있음
-    if (rightPower === 1) {
+    if (rightPower === 1 || rightPower === 3) {
       const data = Buffer.from("0000", "hex").toString("base64");
       rightRwCharacteristic?.writeWithoutResponse(data);
     } else {
@@ -231,9 +243,13 @@ const ControlScreen = ({ route, bleManager }: Props) => {
         "base64"
       );
       rightRwCharacteristic?.writeWithoutResponse(level);
+
+      setRightTemp(0);
     }
 
-    setRightPower(rightPower === 0 ? 1 : 0);
+    // setRightPower(
+    //   rightPower === 0 || rightPower === 2 ? rightPower + 1 : rightPower - 1
+    // );
   };
 
   const handleLeftNotify = () => {
@@ -259,8 +275,10 @@ const ControlScreen = ({ route, bleManager }: Props) => {
             `Left battery: ${battery} currentTemperature : ${currentTemperature} targetTemperature : ${settingTemperature} output: ${output} powerStatus: ${powerStatus}`
           );
 
-          if (powerStatus !== leftPower) {
+          if (leftTest !== powerStatus) {
+            console.log("값이 변경되엇습니다!");
             setLeftPower(powerStatus);
+            leftTest = powerStatus;
           }
 
           if (leftBattery !== battery) {
@@ -299,14 +317,12 @@ const ControlScreen = ({ route, bleManager }: Props) => {
           const powerStatus = parseInt(bufString.substr(8, 2), 16);
 
           console.log(
-            `Right battery: ${bufString.substr(
-              0,
-              2
-            )} currentTemperature : ${currentTemperature} targetTemperature : ${settingTemperature} output: ${output} powerStatus: ${powerStatus}`
+            `Right battery: ${battery} currentTemperature : ${currentTemperature} targetTemperature : ${settingTemperature} output: ${output} powerStatus: ${powerStatus}`
           );
 
-          if (powerStatus !== rightPower) {
+          if (rightTest !== powerStatus) {
             setRightPower(powerStatus);
+            rightTest = powerStatus;
           }
 
           if (rightBattery !== battery) {
@@ -316,8 +332,6 @@ const ControlScreen = ({ route, bleManager }: Props) => {
           if (rightCurTemp !== currentTemperature) {
             setRightCurTemp(currentTemperature);
           }
-
-          // bufString.substr()
         }
       }
     );
@@ -397,15 +411,30 @@ const ControlScreen = ({ route, bleManager }: Props) => {
   const getBatteryStatus = (batteryLeft: number, isCharging: boolean) => {
     let base = "battery";
 
+    console.log(rightPower);
+    console.log(`${batteryLeft}  ${isCharging}`);
+
     if (isCharging) {
       return `${base}-charging`;
     } else {
       if (batteryLeft === 100) {
         return base;
-      } else if (batteryLeft === 0) {
-        return `${base}-outline`;
       } else {
         const level = Math.floor(batteryLeft / 20) * 20;
+
+        if (level === 4) {
+          if (batteryLeft > 90) {
+            return base;
+          }
+        }
+
+        if (level === 0) {
+          if (batteryLeft < 10) {
+            return `${base}-outline`;
+          } else {
+            return `${base}-10`;
+          }
+        }
         return `${base}-${level}`;
       }
     }
@@ -430,7 +459,7 @@ const ControlScreen = ({ route, bleManager }: Props) => {
         <Text h3 style={{ textAlign: "center", marginRight: 16 }}>
           A-3 R Class B
         </Text>
-        <Icon name="setting" type="antdesign" />
+        {/* <Icon name="setting" type="antdesign" /> */}
       </View>
 
       <View style={styles.body}>
@@ -523,7 +552,9 @@ const ControlScreen = ({ route, bleManager }: Props) => {
                   설정 레벨
                 </Text>
                 <Text style={{ textAlign: "center", fontSize: 32 }}>
-                  {!leftDevice || leftPower === 0 ? "-" : leftTempConfig + 1}
+                  {!leftDevice || leftPower === 0 || leftPower === 2
+                    ? "-"
+                    : leftTempConfig + 1}
                 </Text>
               </View>
               <View>
@@ -549,7 +580,7 @@ const ControlScreen = ({ route, bleManager }: Props) => {
                 width: "100%",
                 justifyContent: "flex-end",
                 flexDirection: "row",
-                top: -30,
+                top: -50,
               }}
               pointerEvents="none"
             >
@@ -564,12 +595,10 @@ const ControlScreen = ({ route, bleManager }: Props) => {
                   size={32}
                   color={"black"}
                 />
-                {leftPower !== 2 && leftPower !== 3 && (
-                  <Text>{`${leftBattery}%`}</Text>
-                )}
+                {/* {leftPower !== 2 && leftPower !== 3 && ( */}
+                <Text>{`${leftBattery}%`}</Text>
+                {/* )} */}
               </View>
-
-              {/* TODO:: 배터리 100이면 숫자 없애기 , 충전중 표시로 변경 */}
             </View>
           </View>
         </View>
@@ -657,7 +686,9 @@ const ControlScreen = ({ route, bleManager }: Props) => {
                   설정 레벨
                 </Text>
                 <Text style={{ textAlign: "center", fontSize: 32 }}>
-                  {!rightDevice || rightPower === 0 ? "-" : rightTempConfig + 1}
+                  {!rightDevice || rightPower === 0 || rightPower === 2
+                    ? "-"
+                    : rightTempConfig + 1}
                 </Text>
               </View>
               <View>
@@ -683,7 +714,7 @@ const ControlScreen = ({ route, bleManager }: Props) => {
                 width: "100%",
                 justifyContent: "flex-end",
                 flexDirection: "row",
-                top: -30,
+                top: -50,
               }}
               pointerEvents="none"
             >
@@ -698,9 +729,9 @@ const ControlScreen = ({ route, bleManager }: Props) => {
                   size={32}
                   color={"black"}
                 />
-                {rightPower !== 2 && rightPower !== 3 && (
-                  <Text>{`${rightBattery}%`}</Text>
-                )}
+                {/* {rightPower !== 2 && rightPower !== 3 && ( */}
+                <Text>{`${rightBattery}%`}</Text>
+                {/* )} */}
               </View>
               {/* )} */}
             </View>
